@@ -6,7 +6,8 @@
 #include <cstring>
 #include <vector>
 #include "oauthlib.h"
-#include "curl/curl.h"
+
+typedef void CURL;
 
 /* Few common types used by twitCurl */
 namespace twitCurlTypes

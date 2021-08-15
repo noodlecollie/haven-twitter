@@ -3,6 +3,7 @@
 #include "twitcurlurls.h"
 #include "twitcurl.h"
 #include "urlencode.h"
+#include "curl/curl.h"
 
 /*++
 * @method: twitCurl::twitCurl
@@ -2376,4 +2377,3 @@ bool twitCurl::oAuthHandlePIN( const std::string& authorizeUrl /* in */ )
     }
     return false;
 }
-

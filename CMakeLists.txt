@@ -17,6 +17,7 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(CURL)
 
 add_subdirectory(submodules)
+add_subdirectory(twitcurl)
 
 add_executable(haven-twitter
 	qt-aes/aesni/aesni-enc-cbc.h
@@ -24,19 +25,6 @@ add_executable(haven-twitter
 	qt-aes/aesni/aesni-key-exp.h
 	qt-aes/qaesencryption.h
 	qt-aes/qaesencryption.cpp
-	twitcurl/base64.h
-	twitcurl/base64.cpp
-	twitcurl/HMAC_SHA1.h
-	twitcurl/HMAC_SHA1.cpp
-	twitcurl/oauthlib.h
-	twitcurl/oauthlib.cpp
-	twitcurl/SHA1.h
-	twitcurl/SHA1.cpp
-	twitcurl/twitcurl.h
-	twitcurl/twitcurl.cpp
-	twitcurl/twitcurlurls.h
-	twitcurl/urlencode.h
-	twitcurl/urlencode.cpp
 	authconfigmanager.h
 	authconfigmanager.cpp
 	authconfigworkerthread.h
@@ -54,11 +42,5 @@ add_executable(haven-twitter
 	twitterapplication.cpp
 )
 
-target_link_libraries(haven-twitter Qt5::Widgets)
-
-if(CURL_FOUND)
-	target_link_libraries(haven-twitter ${CURL_LIBRARIES})
-else()
-	# Use project from submodule
-	target_link_libraries(haven-twitter libcurl)
-endif()
+target_link_libraries(haven-twitter PUBLIC Qt5::Widgets)
+target_link_libraries(haven-twitter PUBLIC twitcurl)
