@@ -18,29 +18,5 @@ find_package(CURL)
 
 add_subdirectory(submodules)
 add_subdirectory(twitcurl)
-
-add_executable(haven-twitter
-	qt-aes/aesni/aesni-enc-cbc.h
-	qt-aes/aesni/aesni-enc-ecb.h
-	qt-aes/aesni/aesni-key-exp.h
-	qt-aes/qaesencryption.h
-	qt-aes/qaesencryption.cpp
-	authconfigmanager.h
-	authconfigmanager.cpp
-	authconfigworkerthread.h
-	authconfigworkerthread.cpp
-	debugoauthcredentialinput.h
-	debugoauthcredentialinput.cpp
-	main.cpp
-	mainwindow.ui
-	mainwindow.h
-	mainwindow.cpp
-	splashdialogue.ui
-	splashdialogue.h
-	splashdialogue.cpp
-	twitterapplication.h
-	twitterapplication.cpp
-)
-
-target_link_libraries(haven-twitter PUBLIC Qt5::Widgets)
-target_link_libraries(haven-twitter PUBLIC twitcurl)
+add_subdirectory(qt-aes)
+add_subdirectory(haven-twitter)

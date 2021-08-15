@@ -28,3 +28,5 @@ if(MSVC)
 		/wd4477
 	)
 endif()
+
+target_include_directories(twitcurl PUBLIC .)

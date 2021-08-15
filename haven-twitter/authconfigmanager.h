@@ -5,7 +5,7 @@
 #include <QObject>
 
 #include "authconfigworkerthread.h"
-#include "qt-aes/qaesencryption.h"
+#include "qaesencryption.h"
 
 class QJsonDocument;
 

@@ -2,7 +2,7 @@
 #define AUTHCONFIGWORKERTHREAD_H
 
 #include <QThread>
-#include "twitcurl/twitcurl.h"
+#include "twitcurl.h"
 
 class AuthConfigWorkerThread : public QThread
 {
