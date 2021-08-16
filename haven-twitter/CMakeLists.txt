@@ -1,4 +1,5 @@
 add_executable(haven-twitter
+	resources/resources.qrc
 	authconfigmanager.h
 	authconfigmanager.cpp
 	authconfigworkerthread.h

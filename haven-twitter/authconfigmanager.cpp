@@ -35,6 +35,7 @@ QByteArray AuthConfigManager::m_InitVector(QCryptographicHash::hash(QString("A s
 AuthConfigManager::AuthConfigManager(QObject* parent) :
     QObject(parent)
 {
+    generateConsumerKeyAndSecret();
 }
 
 AuthConfigManager::~AuthConfigManager()
@@ -213,8 +214,6 @@ bool AuthConfigManager::loadConfigFromJson(const QJsonDocument& doc)
 
     QJsonObject root = doc.object();
 
-    m_ApiKey = GetString(root, CFG_API_KEY);
-    m_ApiSecret = GetString(root, CFG_API_SECRET);
     m_AccessToken = GetString(root, CFG_ACCESS_TOKEN);
     m_AccessTokenSecret = GetString(root, CFG_ACCESS_TOKEN_SECRET);
     m_Username = GetString(root, CFG_USERNAME);
@@ -231,8 +230,6 @@ void AuthConfigManager::saveConfigToJson(QJsonDocument& doc)
 
     QJsonObject root = doc.object();
 
-    root.insert(CFG_API_KEY, m_ApiKey);
-    root.insert(CFG_API_SECRET, m_ApiSecret);
     root.insert(CFG_ACCESS_TOKEN, m_AccessToken);
     root.insert(CFG_ACCESS_TOKEN_SECRET, m_AccessTokenSecret);
     root.insert(CFG_USERNAME, m_Username);
@@ -246,4 +243,56 @@ QByteArray AuthConfigManager::encryptJson(const QJsonDocument& doc)
 QByteArray AuthConfigManager::decryptJson(const QByteArray& encryptedInput)
 {
     return m_Encryption.removePadding(m_Encryption.decode(encryptedInput, m_Key, m_InitVector));
+}
+
+void AuthConfigManager::generateConsumerKeyAndSecret()
+{
+    QFile inFile(":/ecapikas");
+
+    if ( !inFile.open(QIODevice::ReadOnly) )
+    {
+        return;
+    }
+
+    QByteArray data = inFile.readAll();
+    inFile.close();
+
+    QByteArray key;
+
+    {
+        // Yeah we can't really hide the credentials in any significant way,
+        // given this is open source, but at least we can stop people
+        // directly grepping the source code/binaries and make them work for it.
+
+        unsigned char magic[8] =
+        {
+            0b10100001,
+            0b10101010,
+            0b00011011,
+            0b10011111,
+            0b11110001,
+            0b01000100,
+            0b01010111,
+            0b00000111
+        };
+
+        char cauldron[16];
+
+        for ( int index = 0; index < static_cast<int>(sizeof(cauldron)); ++index )
+        {
+            cauldron[index] = 0x30 + ((((magic[(index / 2) % sizeof(magic)] ^ 0xAA) << ((index % 2) * 4)) & 0xFF) >> 4);
+            cauldron[index] += (cauldron[index] >= 0x3A ? 0x07 : 0x00);
+        }
+
+        key = QCryptographicHash::hash(QByteArray(cauldron, sizeof(cauldron)), QCryptographicHash::Sha256);
+    }
+
+    QJsonDocument doc = QJsonDocument::fromJson(m_Encryption.removePadding(m_Encryption.decode(data, key, m_InitVector)));
+
+    if ( doc.isObject() )
+    {
+        QJsonObject root = doc.object();
+        m_ApiKey = GetString(root, CFG_API_KEY);
+        m_ApiSecret = GetString(root, CFG_API_SECRET);
+    }
 }

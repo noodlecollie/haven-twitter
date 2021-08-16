@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>468</width>
-    <height>598</height>
+    <height>597</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -52,6 +52,13 @@
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
         <widget class="QPlainTextEdit" name="inputPlainText"/>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="cbHex">
+         <property name="text">
+          <string>Input is in hex</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QPushButton" name="encryptButton">
@@ -185,10 +192,28 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>cbHex</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>setHexMode(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>233</x>
+     <y>293</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>233</x>
+     <y>298</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>updateControlState()</slot>
   <slot>encrypt()</slot>
   <slot>copyToClipboard()</slot>
+  <slot>slot1()</slot>
+  <slot>setHexMode(bool)</slot>
  </slots>
 </ui>

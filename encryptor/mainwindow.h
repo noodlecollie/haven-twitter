@@ -19,10 +19,13 @@ private slots:
     void updateControlState();
     void encrypt();
     void copyToClipboard();
+    void setHexMode(bool enabled);
 
 private:
     bool canEncrypt() const;
+    void toBytes(const QString& input, QByteArray& output) const;
 
     Ui::MainWindow *ui;
+    bool m_InterpretAsHex = false;
 };
 #endif // MAINWINDOW_H

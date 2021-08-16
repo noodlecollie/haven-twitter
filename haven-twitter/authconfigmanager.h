@@ -49,6 +49,7 @@ private:
     void saveConfigToJson(QJsonDocument& doc);
     QByteArray encryptJson(const QJsonDocument& doc);
     QByteArray decryptJson(const QByteArray& encryptedInput);
+    void generateConsumerKeyAndSecret();
 
     static QAESEncryption m_Encryption;
     static QByteArray m_Key;
