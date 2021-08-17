@@ -31,6 +31,9 @@
   <property name="windowTitle">
    <string>Haven Twitter</string>
   </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
     <number>3</number>
@@ -64,7 +67,7 @@
      <item>
       <widget class="QStackedWidget" name="pages">
        <property name="currentIndex">
-        <number>2</number>
+        <number>3</number>
        </property>
        <widget class="QWidget" name="splashPage">
         <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -301,6 +304,96 @@
          </item>
         </layout>
        </widget>
+       <widget class="QWidget" name="loginFailedPage">
+        <layout class="QVBoxLayout" name="verticalLayout_7">
+         <item>
+          <spacer name="verticalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QLabel" name="loginFailedTitleLabel">
+           <property name="text">
+            <string>&lt;h2&gt;Login Failed&lt;/h2&gt;</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="loginFailedDescLabel">
+           <property name="text">
+            <string>&lt;Login failure goes here&gt;</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="failureBackButton">
+             <property name="text">
+              <string>Back</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
       </widget>
      </item>
     </layout>
@@ -357,9 +450,58 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>username</sender>
+   <signal>returnPressed()</signal>
+   <receiver>SplashDialogue</receiver>
+   <slot>doRequestLogin()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>304</x>
+     <y>160</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>274</x>
+     <y>174</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>password</sender>
+   <signal>returnPressed()</signal>
+   <receiver>SplashDialogue</receiver>
+   <slot>doRequestLogin()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>304</x>
+     <y>188</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>274</x>
+     <y>174</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>failureBackButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SplashDialogue</receiver>
+   <slot>goToLoginPage()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>274</x>
+     <y>197</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>274</x>
+     <y>174</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>usernameOrPasswordUpdated()</slot>
   <slot>doRequestLogin()</slot>
+  <slot>goToLoginPage()</slot>
  </slots>
 </ui>

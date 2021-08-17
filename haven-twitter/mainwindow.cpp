@@ -25,6 +25,20 @@ TwitterApplication* MainWindow::twitterApplication() const
 
 void MainWindow::showSplash()
 {
-    SplashDialogue* splash = new SplashDialogue(this);
-    splash->open();
+    if ( !m_Splash )
+    {
+        m_Splash = new SplashDialogue(this);
+        connect(m_Splash, &SplashDialogue::authCompleted, this, &MainWindow::onAuthCompleted);
+    }
+
+    QTimer::singleShot(1000, m_Splash, &SplashDialogue::attemptInitialAuth);
+    m_Splash->open();
+}
+
+void MainWindow::onAuthCompleted()
+{
+    delete m_Splash;
+    m_Splash = nullptr;
+
+    show();
 }

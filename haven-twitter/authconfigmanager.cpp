@@ -4,6 +4,9 @@
 #include <QCryptographicHash>
 #include <QSysInfo>
 #include <QtDebug>
+#include <QCoreApplication>
+#include <QDir>
+#include <QDeadlineTimer>
 
 #include "authconfigmanager.h"
 
@@ -40,11 +43,7 @@ AuthConfigManager::AuthConfigManager(QObject* parent) :
 
 AuthConfigManager::~AuthConfigManager()
 {
-    if ( m_WorkerThread )
-    {
-        m_WorkerThread->quit();
-        m_WorkerThread->wait();
-    }
+    disposeOfWorkerThread();
 }
 
 QString AuthConfigManager::username() const
@@ -119,6 +118,11 @@ bool AuthConfigManager::canAuthenticate() const
            (!m_AccessToken.isEmpty() && !m_AccessTokenSecret.isEmpty());
 }
 
+QString AuthConfigManager::defaultConfigFilePath() const
+{
+    return QDir(qApp->applicationDirPath()).filePath("auth.cfg");
+}
+
 bool AuthConfigManager::loadConfigFromFile(const QString& path)
 {
     qDebug() << "Attempting to load auth config from file:" << path;
@@ -181,27 +185,55 @@ void AuthConfigManager::beginAuthProcess()
     m_WorkerThread->setAccessToken(m_AccessToken);
     m_WorkerThread->setAccessTokenSecret(m_AccessTokenSecret);
 
-    connect(m_WorkerThread, &AuthConfigWorkerThread::newAccessTokenAcquired, this, &AuthConfigManager::setAccessTokenVars, Qt::QueuedConnection);
-    connect(m_WorkerThread, &AuthConfigWorkerThread::finished, this, &AuthConfigManager::authProcessComplete);
+    connect(m_WorkerThread, &AuthConfigWorkerThread::authFinished, this, &AuthConfigManager::onAuthProcessComplete, Qt::QueuedConnection);
+    connect(m_WorkerThread, &AuthConfigWorkerThread::finished, this, &AuthConfigManager::disposeOfWorkerThread);
 
     m_WorkerThread->start();
 }
 
-void AuthConfigManager::authProcessComplete()
+void AuthConfigManager::onAuthProcessComplete(bool success, twitCurl* tcObj)
 {
-    if ( !m_WorkerThread )
-    {
-        return;
-    }
+    // We take ownership of the produced object.
+    // TODO: Store this in the TwitterApplication.
+    QSharedPointer<twitCurl> ptr(tcObj);
 
-    m_WorkerThread->deleteLater();
-    m_WorkerThread = nullptr;
+    if ( success )
+    {
+        std::string accessToken;
+        ptr->getOAuth().getOAuthTokenKey(accessToken);
+        m_AccessToken = QString::fromStdString(accessToken);
+
+        std::string accessTokenSecret;
+        ptr->getOAuth().getOAuthTokenSecret(accessTokenSecret);
+        m_AccessTokenSecret = QString::fromStdString(accessTokenSecret);
+
+        emit authProcessComplete();
+    }
+    else
+    {
+        m_AccessToken.clear();
+        m_AccessTokenSecret.clear();
+
+        std::string requestError;
+        ptr->getLastCurlError(requestError);
+
+        emit authProcessFailed(QString::fromStdString(requestError));
+    }
 }
 
-void AuthConfigManager::setAccessTokenVars(QString accessToken, QString accessTokenSecret)
+void AuthConfigManager::disposeOfWorkerThread()
 {
-    m_AccessToken = accessToken;
-    m_AccessTokenSecret = accessTokenSecret;
+    if ( m_WorkerThread )
+    {
+        m_WorkerThread->quit();
+
+        if ( !m_WorkerThread->wait(QDeadlineTimer(5000)) )
+        {
+            m_WorkerThread->terminate();
+        }
+
+        m_WorkerThread = nullptr;
+    }
 }
 
 bool AuthConfigManager::loadConfigFromJson(const QJsonDocument& doc)
@@ -218,21 +250,19 @@ bool AuthConfigManager::loadConfigFromJson(const QJsonDocument& doc)
     m_AccessTokenSecret = GetString(root, CFG_ACCESS_TOKEN_SECRET);
     m_Username = GetString(root, CFG_USERNAME);
 
+    qDebug() << "Auth config loaded.";
     return true;
 }
 
 void AuthConfigManager::saveConfigToJson(QJsonDocument& doc)
 {
-    if ( !doc.isObject() )
-    {
-        return;
-    }
-
-    QJsonObject root = doc.object();
+    QJsonObject root;
 
     root.insert(CFG_ACCESS_TOKEN, m_AccessToken);
     root.insert(CFG_ACCESS_TOKEN_SECRET, m_AccessTokenSecret);
     root.insert(CFG_USERNAME, m_Username);
+
+    doc.setObject(root);
 }
 
 QByteArray AuthConfigManager::encryptJson(const QJsonDocument& doc)

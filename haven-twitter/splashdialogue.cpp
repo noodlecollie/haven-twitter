@@ -1,6 +1,7 @@
 #include <QLineEdit>
 #include <QTimer>
 #include <QDir>
+#include <QtDebug>
 
 #include "splashdialogue.h"
 #include "ui_splashdialogue.h"
@@ -9,19 +10,14 @@
 SplashDialogue::SplashDialogue(MainWindow *parent) :
     QDialog(parent),
     ui(new Ui::SplashDialogue),
-    m_MainWindow(parent)
+    m_MainWindow(parent),
+    m_Auth(new AuthConfigManager(this))
 {
     ui->setupUi(this);
-
     ui->pages->setCurrentIndex(SplashPage);
-    QWidget* loginPage = ui->pages->widget(LoginPage);
 
-    if ( loginPage )
-    {
-        m_UsernameInput = loginPage->findChild<QLineEdit*>("username");
-        m_PasswordInput = loginPage->findChild<QLineEdit*>("password");
-        m_LoginButton = loginPage->findChild<QPushButton*>("loginButton");
-    }
+    connect(m_Auth, &AuthConfigManager::authProcessComplete, this, &SplashDialogue::handleAuthProcessComplete);
+    connect(m_Auth, &AuthConfigManager::authProcessFailed, this, &SplashDialogue::handleAuthProcessFailed);
 }
 
 SplashDialogue::~SplashDialogue()
@@ -34,14 +30,22 @@ void SplashDialogue::setPage(Page page)
     ui->pages->setCurrentIndex(page);
 }
 
-void SplashDialogue::usernameOrPasswordUpdated()
+void SplashDialogue::attemptInitialAuth()
 {
-    if ( !m_LoginButton )
+    if ( !m_Auth->loadConfigFromFile(m_Auth->defaultConfigFilePath()) ||
+         !m_Auth->canAuthenticate() )
     {
+        qDebug() << "Cannot authenticate yet, user login is required.";
+        setPage(LoginPage);
         return;
     }
 
-    m_LoginButton->setEnabled(canAttemptLogIn());
+    beginAuth();
+}
+
+void SplashDialogue::usernameOrPasswordUpdated()
+{
+    ui->loginButton->setEnabled(canAttemptLogIn());
 }
 
 void SplashDialogue::doRequestLogin()
@@ -51,7 +55,33 @@ void SplashDialogue::doRequestLogin()
         return;
     }
 
-    emit requestLogin(getUsername(), getPassword());
+    //m_Auth->setUsername(getUsername());
+    //m_Auth->setPassword(getPassword());
+
+    beginAuth();
+}
+
+void SplashDialogue::handleAuthProcessComplete()
+{
+    qDebug() << "Auth process complete.";
+
+    m_Auth->saveToConfigFile(m_Auth->defaultConfigFilePath());
+    emit authCompleted();
+}
+
+void SplashDialogue::handleAuthProcessFailed(const QString& message)
+{
+    qDebug() << "Auth process failed.";
+
+    ui->loginFailedTitleLabel->setText(tr("<h2>Login Failed For: %0</h2>").arg(m_Auth->username()));
+    ui->loginFailedDescLabel->setText(message.isEmpty() ? tr("Please try again.") : message);
+    setPage(LoginFailurePage);
+}
+
+void SplashDialogue::goToLoginPage()
+{
+    ui->password->clear();
+    setPage(LoginPage);
 }
 
 bool SplashDialogue::canAttemptLogIn() const
@@ -61,10 +91,17 @@ bool SplashDialogue::canAttemptLogIn() const
 
 QString SplashDialogue::getUsername() const
 {
-    return m_UsernameInput ? m_UsernameInput->text().trimmed() : QString();
+    return ui->username->text().trimmed();
 }
 
 QString SplashDialogue::getPassword() const
 {
-    return m_PasswordInput ? m_PasswordInput->text() : QString();
+    return ui->password->text();
+}
+
+void SplashDialogue::beginAuth()
+{
+    qDebug() << "Beginning auth process.";
+    m_Auth->beginAuthProcess();
+    setPage(LoginInProgressPage);
 }

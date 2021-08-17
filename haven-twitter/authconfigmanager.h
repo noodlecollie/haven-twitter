@@ -34,15 +34,20 @@ public:
     QString accessTokenSecret() const;
     void setAccessTokenSecret(const QString& secret);
 
+    QString defaultConfigFilePath() const;
     bool loadConfigFromFile(const QString& path);
     void saveToConfigFile(const QString& path);
 
     bool canAuthenticate() const;
     void beginAuthProcess();
 
-private slots:
+signals:
     void authProcessComplete();
-    void setAccessTokenVars(QString accessToken, QString accessTokenSecret);
+    void authProcessFailed(const QString& message);
+
+private slots:
+    void onAuthProcessComplete(bool success, twitCurl* tcObj);
+    void disposeOfWorkerThread();
 
 private:
     bool loadConfigFromJson(const QJsonDocument& doc);

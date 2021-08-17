@@ -4,6 +4,7 @@
 #include <QMainWindow>
 
 class TwitterApplication;
+class SplashDialogue;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -22,8 +23,12 @@ public:
 public slots:
     void showSplash();
 
+private slots:
+    void onAuthCompleted();
+
 private:
     Ui::MainWindow *ui;
     TwitterApplication* m_App = nullptr;
+    SplashDialogue* m_Splash = nullptr;
 };
 #endif // MAINWINDOW_H

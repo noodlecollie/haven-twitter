@@ -20,10 +20,13 @@ public:
     void setPassword(const QString& password);
 
 signals:
-    void newAccessTokenAcquired(QString accessToken, QString accessTokenSecret);
+    // The caller takes ownership of the twitCurl object.
+    // It is guaranteed to always be valid.
+    void authFinished(bool success, twitCurl* tcObj);
 
 private:
     void run() override;
+    bool requestWasSuccessful(twitCurl* tcObj) const;
 
     QString m_ApiKey;
     QString m_ApiSecret;
@@ -32,7 +35,6 @@ private:
     QString m_Username;
     QString m_Password;
 
-    twitCurl tcObj;
     bool m_ReceivedNewAccessToken = false;
 };
 

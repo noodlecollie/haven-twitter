@@ -2,6 +2,7 @@
 #define SPLASHDIALOGUE_H
 
 #include <QDialog>
+#include "authconfigmanager.h"
 
 class QLineEdit;
 class MainWindow;
@@ -19,7 +20,8 @@ public:
     {
         SplashPage = 0,
         LoginPage,
-        LoginInProgressPage
+        LoginInProgressPage,
+        LoginFailurePage
     };
 
     explicit SplashDialogue(MainWindow *parent = nullptr);
@@ -28,23 +30,28 @@ public:
     void setPage(Page page);
 
 signals:
-    void requestLogin(const QString& username, const QString& password);
+    void authCompleted();
+
+public slots:
+    void attemptInitialAuth();
 
 private slots:
     void usernameOrPasswordUpdated();
     void doRequestLogin();
+    void handleAuthProcessComplete();
+    void handleAuthProcessFailed(const QString& message);
+    void goToLoginPage();
 
 private:
     bool canAttemptLogIn() const;
     QString getUsername() const;
     QString getPassword() const;
+    void beginAuth();
 
     Ui::SplashDialogue *ui;
 
     MainWindow* m_MainWindow = nullptr;
-    QLineEdit* m_UsernameInput = nullptr;
-    QLineEdit* m_PasswordInput = nullptr;
-    QPushButton* m_LoginButton = nullptr;
+    AuthConfigManager* m_Auth = nullptr;
 };
 
 #endif // SPLASHDIALOGUE_H
