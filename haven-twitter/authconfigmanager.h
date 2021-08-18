@@ -3,11 +3,13 @@
 
 #include <QString>
 #include <QObject>
+#include <QPointer>
 
 #include "authconfigworkerthread.h"
 #include "qaesencryption.h"
 
 class QJsonDocument;
+class TwitterApplication;
 
 class AuthConfigManager : public QObject
 {
@@ -15,6 +17,8 @@ class AuthConfigManager : public QObject
 public:
     AuthConfigManager(QObject* parent = nullptr);
     virtual ~AuthConfigManager();
+
+    void setTwitterApplication(TwitterApplication* app);
 
     QString username() const;
     void setUsername(const QString& username);
@@ -38,6 +42,7 @@ public:
     bool loadConfigFromFile(const QString& path);
     void saveToConfigFile(const QString& path);
 
+    bool hasApiCredentials() const;
     bool canAuthenticate() const;
     void beginAuthProcess();
 
@@ -46,7 +51,7 @@ signals:
     void authProcessFailed(const QString& message);
 
 private slots:
-    void onAuthProcessComplete(bool success, twitCurl* tcObj);
+    void onAuthProcessComplete(bool success, twitCurl* tcObj, QString errorString);
     void disposeOfWorkerThread();
 
 private:
@@ -61,6 +66,7 @@ private:
     static QByteArray m_InitVector;
 
     AuthConfigWorkerThread* m_WorkerThread = nullptr;
+    QPointer<TwitterApplication> m_TwitterApplication;
 
     QString m_Username;
     QString m_Password;

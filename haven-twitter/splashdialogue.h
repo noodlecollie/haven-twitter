@@ -21,7 +21,8 @@ public:
         SplashPage = 0,
         LoginPage,
         LoginInProgressPage,
-        LoginFailurePage
+        LoginFailurePage,
+        FatalErrorPage
     };
 
     explicit SplashDialogue(MainWindow *parent = nullptr);
@@ -30,10 +31,13 @@ public:
     void setPage(Page page);
 
 signals:
-    void authCompleted();
+    void closing();
 
 public slots:
     void attemptInitialAuth();
+
+protected:
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
     void usernameOrPasswordUpdated();

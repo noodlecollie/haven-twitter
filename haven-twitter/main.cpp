@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
 
     MainWindow w;
     w.showSplash();
+    w.show();
 
     return a.exec();
 }

@@ -22,11 +22,11 @@ public:
 signals:
     // The caller takes ownership of the twitCurl object.
     // It is guaranteed to always be valid.
-    void authFinished(bool success, twitCurl* tcObj);
+    void authFinished(bool success, twitCurl* tcObj, QString errorString);
 
 private:
     void run() override;
-    bool requestWasSuccessful(twitCurl* tcObj) const;
+    bool receivedErrorResponse(twitCurl* tcObj, QString& errorResponse) const;
 
     QString m_ApiKey;
     QString m_ApiSecret;

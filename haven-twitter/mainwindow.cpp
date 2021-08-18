@@ -1,4 +1,6 @@
 #include <QTimer>
+#include <QtDebug>
+#include <QApplication>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -28,17 +30,24 @@ void MainWindow::showSplash()
     if ( !m_Splash )
     {
         m_Splash = new SplashDialogue(this);
-        connect(m_Splash, &SplashDialogue::authCompleted, this, &MainWindow::onAuthCompleted);
+        connect(m_Splash, &SplashDialogue::closing, this, &MainWindow::onSplashClose);
     }
 
     QTimer::singleShot(1000, m_Splash, &SplashDialogue::attemptInitialAuth);
     m_Splash->open();
 }
 
-void MainWindow::onAuthCompleted()
+void MainWindow::onSplashClose()
 {
-    delete m_Splash;
-    m_Splash = nullptr;
+    if ( m_Splash )
+    {
+        delete m_Splash;
+        m_Splash = nullptr;
+    }
 
-    show();
+    if ( !m_App->isInitialised() )
+    {
+        qDebug() << "Auth process did not complete, shutting down.";
+        qApp->quit();
+    }
 }

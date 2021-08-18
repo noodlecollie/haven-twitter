@@ -9,6 +9,7 @@
 #include <QDeadlineTimer>
 
 #include "authconfigmanager.h"
+#include "twitterapplication.h"
 
 static constexpr const char* const CFG_API_KEY = "apiKey";
 static constexpr const char* const CFG_API_SECRET = "apiSecret";
@@ -44,6 +45,11 @@ AuthConfigManager::AuthConfigManager(QObject* parent) :
 AuthConfigManager::~AuthConfigManager()
 {
     disposeOfWorkerThread();
+}
+
+void AuthConfigManager::setTwitterApplication(TwitterApplication* app)
+{
+    m_TwitterApplication = app;
 }
 
 QString AuthConfigManager::username() const
@@ -106,9 +112,14 @@ void AuthConfigManager::setAccessTokenSecret(const QString& secret)
     m_AccessTokenSecret = secret;
 }
 
+bool AuthConfigManager::hasApiCredentials() const
+{
+    return !m_ApiKey.isEmpty() && !m_ApiSecret.isEmpty();
+}
+
 bool AuthConfigManager::canAuthenticate() const
 {
-    if ( m_ApiKey.isEmpty() || m_ApiSecret.isEmpty() )
+    if ( !hasApiCredentials() )
     {
         return false;
     }
@@ -191,10 +202,9 @@ void AuthConfigManager::beginAuthProcess()
     m_WorkerThread->start();
 }
 
-void AuthConfigManager::onAuthProcessComplete(bool success, twitCurl* tcObj)
+void AuthConfigManager::onAuthProcessComplete(bool success, twitCurl* tcObj, QString errorString)
 {
     // We take ownership of the produced object.
-    // TODO: Store this in the TwitterApplication.
     QSharedPointer<twitCurl> ptr(tcObj);
 
     if ( success )
@@ -207,6 +217,11 @@ void AuthConfigManager::onAuthProcessComplete(bool success, twitCurl* tcObj)
         ptr->getOAuth().getOAuthTokenSecret(accessTokenSecret);
         m_AccessTokenSecret = QString::fromStdString(accessTokenSecret);
 
+        if ( m_TwitterApplication )
+        {
+            m_TwitterApplication->setTwitCurlObject(ptr);
+        }
+
         emit authProcessComplete();
     }
     else
@@ -214,10 +229,7 @@ void AuthConfigManager::onAuthProcessComplete(bool success, twitCurl* tcObj)
         m_AccessToken.clear();
         m_AccessTokenSecret.clear();
 
-        std::string requestError;
-        ptr->getLastCurlError(requestError);
-
-        emit authProcessFailed(QString::fromStdString(requestError));
+        emit authProcessFailed(errorString);
     }
 }
 

@@ -24,7 +24,7 @@ public slots:
     void showSplash();
 
 private slots:
-    void onAuthCompleted();
+    void onSplashClose();
 
 private:
     Ui::MainWindow *ui;

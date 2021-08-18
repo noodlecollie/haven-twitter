@@ -16,6 +16,11 @@ SplashDialogue::SplashDialogue(MainWindow *parent) :
     ui->setupUi(this);
     ui->pages->setCurrentIndex(SplashPage);
 
+    if ( m_MainWindow )
+    {
+        m_Auth->setTwitterApplication(m_MainWindow->twitterApplication());
+    }
+
     connect(m_Auth, &AuthConfigManager::authProcessComplete, this, &SplashDialogue::handleAuthProcessComplete);
     connect(m_Auth, &AuthConfigManager::authProcessFailed, this, &SplashDialogue::handleAuthProcessFailed);
 }
@@ -32,6 +37,13 @@ void SplashDialogue::setPage(Page page)
 
 void SplashDialogue::attemptInitialAuth()
 {
+    if ( !m_Auth->hasApiCredentials() )
+    {
+        qCritical() << "Unable to obtain API keys.";
+        setPage(FatalErrorPage);
+        return;
+    }
+
     if ( !m_Auth->loadConfigFromFile(m_Auth->defaultConfigFilePath()) ||
          !m_Auth->canAuthenticate() )
     {
@@ -55,8 +67,8 @@ void SplashDialogue::doRequestLogin()
         return;
     }
 
-    //m_Auth->setUsername(getUsername());
-    //m_Auth->setPassword(getPassword());
+    m_Auth->setUsername(getUsername());
+    m_Auth->setPassword(getPassword());
 
     beginAuth();
 }
@@ -66,14 +78,22 @@ void SplashDialogue::handleAuthProcessComplete()
     qDebug() << "Auth process complete.";
 
     m_Auth->saveToConfigFile(m_Auth->defaultConfigFilePath());
-    emit authCompleted();
+    close();
 }
 
 void SplashDialogue::handleAuthProcessFailed(const QString& message)
 {
     qDebug() << "Auth process failed.";
 
-    ui->loginFailedTitleLabel->setText(tr("<h2>Login Failed For: %0</h2>").arg(m_Auth->username()));
+    if ( m_Auth->username().isEmpty() )
+    {
+        ui->loginFailedTitleLabel->setText(tr("<h2>Login Failed</h2>"));
+    }
+    else
+    {
+        ui->loginFailedTitleLabel->setText(tr("<h2>Login Failed For %0</h2>").arg(m_Auth->username()));
+    }
+
     ui->loginFailedDescLabel->setText(message.isEmpty() ? tr("Please try again.") : message);
     setPage(LoginFailurePage);
 }
@@ -104,4 +124,12 @@ void SplashDialogue::beginAuth()
     qDebug() << "Beginning auth process.";
     m_Auth->beginAuthProcess();
     setPage(LoginInProgressPage);
+}
+
+void SplashDialogue::closeEvent(QCloseEvent *event)
+{
+    Q_UNUSED(event);
+
+    qDebug() << "Closing splash dialogue.";
+    emit closing();
 }

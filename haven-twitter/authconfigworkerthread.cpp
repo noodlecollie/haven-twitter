@@ -76,48 +76,103 @@ void AuthConfigWorkerThread::run()
 
     qDebug() << "AuthConfigWorkerThread: Performing OAuth authentication.";
 
-    const bool success = tcObj->oAuthAccessToken() &&
-        tcObj->accountVerifyCredGet() &&
-        requestWasSuccessful(tcObj);
+    bool success = false;
+    QString errorString;
 
-    if ( success )
+    if ( !tcObj->oAuthAccessToken() )
     {
-        qDebug() << "AuthConfigWorkerThread: OAuth authentication succeeded.";
-
-        std::string replyMsg;
-        tcObj->getLastWebResponse(replyMsg);
-        qDebug() << replyMsg.c_str();
+        qWarning() << "AuthConfigWorkerThread: Failed to authenticate with Twitter.";
+        errorString = "Failed to authenticate with Twitter.";
     }
     else
     {
-        std::string replyMsg;
-        tcObj->getLastCurlError(replyMsg);
+        tcObj->accountVerifyCredGet();
 
-        qWarning() << "AuthConfigWorkerThread: Failed to authenticate with Twitter. Response:" << replyMsg.c_str();
+        if ( receivedErrorResponse(tcObj, errorString) )
+        {
+            qWarning() << "AuthConfigWorkerThread: Failed to authenticate with Twitter. Response:" << errorString;
+        }
+        else
+        {
+            success = true;
+            qDebug() << "AuthConfigWorkerThread: OAuth authentication succeeded.";
+        }
     }
 
-    emit authFinished(success, tcObj);
+    emit authFinished(success, tcObj, errorString);
 }
 
-bool AuthConfigWorkerThread::requestWasSuccessful(twitCurl* tcObj) const
+bool AuthConfigWorkerThread::receivedErrorResponse(twitCurl* tcObj, QString& errorResponse) const
 {
     // For some reason, some requests report that they were successful
     // even though Twitter returned an error. We check for the error here.
     // It's fairly quick and dirty but it should do.
 
     std::string content;
+    tcObj->getLastCurlError(content);
+
+    if ( !content.empty() )
+    {
+        // Definitely an error.
+        errorResponse = QString::fromStdString(content);
+        return true;
+    }
+
     tcObj->getLastWebResponse(content);
 
     QJsonDocument doc = QJsonDocument::fromJson(QByteArray::fromStdString(content));
 
     if ( !doc.isObject() )
     {
-        return false;
+        return true;
     }
 
     QJsonObject root = doc.object();
 
-    return !(root.contains("errors") &&
-        root.value("errors").isArray() &&
-        root.value("errors").toArray().count() > 0);
+    if ( !root.contains("errors") )
+    {
+        // Assume all is fine.
+        return false;
+    }
+
+    QJsonValue errorsJson = root.value("errors");
+
+    if ( errorsJson.isArray() )
+    {
+        QJsonArray errorsArray = errorsJson.toArray();
+        QStringList errorStrings;
+
+        for ( QJsonValue err : errorsArray )
+        {
+            if ( !err.isObject() )
+            {
+                continue;
+            }
+
+            QJsonObject errObj = err.toObject();
+
+            if ( !errObj.contains("message") )
+            {
+                continue;
+            }
+
+            QJsonValue messageValue = errObj.value("message");
+
+            if ( !messageValue.isString() )
+            {
+                continue;
+            }
+
+            errorStrings.append(messageValue.toString());
+        }
+
+        errorResponse = errorStrings.join("; ");
+    }
+
+    if ( errorResponse.isEmpty() )
+    {
+        errorResponse = "Unknown error.";
+    }
+
+    return true;
 }
